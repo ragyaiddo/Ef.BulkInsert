@@ -3,36 +3,37 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ragyaiddo.Ef.BulkInsert.Extensions
 {
-    public static class TypeExtensions
+    internal static class TypeExtensions
     {
         public static object GetNonPublicFieldValue(this object obj, string propertyName)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
             Type type = obj.GetType();
-            FieldInfo fieldInfo = (FieldInfo)null;
-            PropertyInfo propertyInfo = (PropertyInfo)null;
+
             BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.NonPublic;
-            for (; fieldInfo == (FieldInfo)null && propertyInfo == (PropertyInfo)null && type != (Type)null; type = type.BaseType)
+            while (type != null)
             {
-                fieldInfo = type.GetField(propertyName, bindingAttr);
-                if (fieldInfo != (FieldInfo)null)
+                FieldInfo fieldInfo = type.GetField(propertyName, bindingAttr);
+                if (fieldInfo != null)
                     return fieldInfo.GetValue(obj);
-                propertyInfo = type.GetProperty(propertyName, bindingAttr);
-                if (propertyInfo != (PropertyInfo)null)
+
+                PropertyInfo propertyInfo = type.GetProperty(propertyName, bindingAttr);
+                if (propertyInfo != null)
                     return propertyInfo.GetValue(obj);
+
+                type = type.BaseType;
             }
-            throw new ArgumentOutOfRangeException(string.Format("Field {0} not found in Type {1}", (object)propertyName, (object)obj.GetType().FullName));
+
+            throw new ArgumentOutOfRangeException($"Field {propertyName} not found in Type {obj.GetType().FullName}");
         }
 
         public static string GetPrimaryKeyByConvention(this Type dataType)
         {
-            return ((IEnumerable<PropertyInfo>)dataType.GetProperties()).FirstOrDefault(p =>
+            return dataType.GetProperties().FirstOrDefault(p =>
             {
                 if (!p.Name.Equals("ID", StringComparison.OrdinalIgnoreCase))
                     return p.Name.Equals(dataType.Name + "ID", StringComparison.OrdinalIgnoreCase);
@@ -42,7 +43,7 @@ namespace Ragyaiddo.Ef.BulkInsert.Extensions
 
         public static IEnumerable<string> GetPrimaryKeysByKeyAttribute(this Type dataType)
         {
-            return ((IEnumerable<PropertyInfo>)dataType.GetProperties())
+            return dataType.GetProperties()
                 .Where(p => p.CustomAttributes.Any(attr => attr.AttributeType == typeof(KeyAttribute)))
                 .Select(x => x.Name);
         }

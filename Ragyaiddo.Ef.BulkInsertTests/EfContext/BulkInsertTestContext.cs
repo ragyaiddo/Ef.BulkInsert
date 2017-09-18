@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Ragyaiddo.Ef.BulkInsertTests.DataModel;
-using System.Data.Entity.ModelConfiguration.Conventions;
-using System.Linq.Expressions;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity;
+using System.Data.Entity.ModelConfiguration.Conventions;
+using System.Linq;
+using Ragyaiddo.Ef.BulkInsertTests.DataModel;
 
 namespace Ragyaiddo.Ef.BulkInsertTests.EfContext
 {
@@ -15,17 +12,17 @@ namespace Ragyaiddo.Ef.BulkInsertTests.EfContext
     {
         public BulkInsertTestContext() : base("BulkInsertConnectionString")
         {
-            this.Configuration.LazyLoadingEnabled = false;
-            this.Configuration.ProxyCreationEnabled = false;
-            this.Database.CommandTimeout = new int?(180);
-            Database.SetInitializer<BulkInsertTestContext>((IDatabaseInitializer<BulkInsertTestContext>)null);
+            Configuration.LazyLoadingEnabled = false;
+            Configuration.ProxyCreationEnabled = false;
+            Database.CommandTimeout = 180;
+            Database.SetInitializer((IDatabaseInitializer<BulkInsertTestContext>)null);
         }
 
         public DbSet<SimpleModel> SimpleModels { get; set; }
 
         public List<T> SqlQuery<T>(string query, params object[] parameters)
         {
-            return this.Database.SqlQuery<T>(query, parameters).ToList<T>();
+            return Database.SqlQuery<T>(query, parameters).ToList();
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
@@ -36,7 +33,7 @@ namespace Ragyaiddo.Ef.BulkInsertTests.EfContext
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
             modelBuilder.Conventions.Remove<ManyToManyCascadeDeleteConvention>();
 
-            modelBuilder.Entity<SimpleModel>().Property(x => x.Id).HasDatabaseGeneratedOption(new DatabaseGeneratedOption?(DatabaseGeneratedOption.Identity));
+            modelBuilder.Entity<SimpleModel>().Property(x => x.Id).HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
         }
     }
 }

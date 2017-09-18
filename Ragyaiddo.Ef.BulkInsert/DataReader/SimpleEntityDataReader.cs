@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Ragyaiddo.Ef.BulkInsert
+namespace Ragyaiddo.Ef.BulkInsert.DataReader
 {
     public class SimpleEntityDataReader<TEntity> : EntityDataReaderBase<TEntity>
     {
