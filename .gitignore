@@ -45,3 +45,8 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.dll
+*.pdb
+Ragyaiddo.Ef.BulkInsertTests/bin/Debug/Ragyaiddo.Ef.BulkInsert.dll.config
+Ragyaiddo.Ef.BulkInsertTests/bin/Debug/EntityFramework.SqlServer.xml
+Ragyaiddo.Ef.BulkInsert/bin/Debug/EntityFramework.SqlServer.xml
