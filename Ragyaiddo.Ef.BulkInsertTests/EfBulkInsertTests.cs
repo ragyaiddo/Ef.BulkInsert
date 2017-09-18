@@ -1,90 +1,372 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Collections.Generic;
 using Ragyaiddo.Ef.BulkInsertTests.DataModel;
 using Ragyaiddo.Ef.BulkInsertTests.EfContext;
 using Ragyaiddo.Ef.BulkInsert;
 using System.Data.SqlClient;
+using System.Diagnostics;
+using System.Linq;
 using Ragyaiddo.Ef.BulkInsertTests.TestDataGenerator;
-using System.Data.Common;
-using System.Data.Entity;
-using System.Data;
+using Ragyaiddo.Ef.BulkInsert.DataReader;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Ragyaiddo.Ef.BulkInsertTests
 {
-    /// <summary>
-    /// Summary description for EfBulkInsertTests
-    /// </summary>
-    [TestClass]
     public class EfBulkInsertTests
     {
-        public EfBulkInsertTests()
+        private readonly ITestOutputHelper _output;
+        
+        public EfBulkInsertTests(ITestOutputHelper output)
         {
-            //
-            // TODO: Add constructor logic here
-            //
+            _output = output;
         }
 
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext
+        [Theory]
+        [InlineData(1000)]
+        [InlineData(5000)]
+        [InlineData(10000)]
+        [InlineData(20000)]
+        [InlineData(50000)]
+        [InlineData(100000)]
+        public void BulkInsert_SimpleModel(int dataSize)
         {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
-        }
-
-        #region Additional test attributes
-        //
-        // You can use the following additional attributes as you write your tests:
-        //
-        // Use ClassInitialize to run code before running the first test in the class
-        // [ClassInitialize()]
-        // public static void MyClassInitialize(TestContext testContext) { }
-        //
-        // Use ClassCleanup to run code after all tests in a class have run
-        // [ClassCleanup()]
-        // public static void MyClassCleanup() { }
-        //
-        // Use TestInitialize to run code before running each test 
-        // [TestInitialize()]
-        // public void MyTestInitialize() { }
-        //
-        // Use TestCleanup to run code after each test has run
-        // [TestCleanup()]
-        // public void MyTestCleanup() { }
-        //
-        #endregion
-
-        [TestMethod]
-        public void BulkInsert_SimpleModel()
-        {
-            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(10);
-            using (BulkInsertTestContext insertTestContext = new BulkInsertTestContext())
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
             {
                 var options = new BulkCopyOptions()
                 {
-                    BatchSize = 100,
+                    BatchSize = 1000,
                     SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
                     TimeOut = 180
                 };
 
+                sw.Start();
                 IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
-
                 bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
                     insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
                     () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
             }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
         }
+
+        [Theory]
+        [InlineData(1000)]
+        [InlineData(5000)]
+        [InlineData(10000)]
+        [InlineData(20000)]
+        [InlineData(50000)]
+        [InlineData(100000)]
+        public void ContextAddRangeInsert_SimpleModel(int dataSize)
+        {
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void BulkInsert_SimpleModel_1000()
+        {
+            int dataSize = 1000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                var options = new BulkCopyOptions()
+                {
+                    BatchSize = 1000,
+                    SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
+                    TimeOut = 180
+                };
+
+                sw.Start();
+                IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
+                bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
+                    insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
+                    () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void BulkInsert_SimpleModel_5000()
+        {
+            int dataSize = 5000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                var options = new BulkCopyOptions()
+                {
+                    BatchSize = 1000,
+                    SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
+                    TimeOut = 180
+                };
+
+                sw.Start();
+                IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
+                bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
+                    insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
+                    () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+
+        [Fact]
+        public void BulkInsert_SimpleModel_10000()
+        {
+            int dataSize = 10000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                var options = new BulkCopyOptions()
+                {
+                    BatchSize = 1000,
+                    SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
+                    TimeOut = 180
+                };
+
+                sw.Start();
+                IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
+                bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
+                    insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
+                    () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void BulkInsert_SimpleModel_20000()
+        {
+            int dataSize = 20000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                var options = new BulkCopyOptions()
+                {
+                    BatchSize = 1000,
+                    SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
+                    TimeOut = 180
+                };
+
+                sw.Start();
+                IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
+                bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
+                    insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
+                    () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void BulkInsert_SimpleModel_50000()
+        {
+            int dataSize = 50000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                var options = new BulkCopyOptions()
+                {
+                    BatchSize = 1000,
+                    SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
+                    TimeOut = 180
+                };
+
+                sw.Start();
+                IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
+                bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
+                    insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
+                    () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void BulkInsert_SimpleModel_100000()
+        {
+            int dataSize = 100000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                var options = new BulkCopyOptions()
+                {
+                    BatchSize = 1000,
+                    SqlBulkCopyOptions = SqlBulkCopyOptions.Default,
+                    TimeOut = 180
+                };
+
+                sw.Start();
+                IBulkInsertProvider bulkInsertProvider = new BulkInsertProvider(options);
+                bulkInsertProvider.BulkInsert(insertTestContext.Database.Connection,
+                    insertTestContext.Database.CurrentTransaction?.UnderlyingTransaction,
+                    () => new SimpleEntityDataReader<SimpleModel>(testSimpleModels));
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void ContextAddRangeInsert_SimpleModel_1000()
+        {
+            int dataSize = 1000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void ContextAddRangeInsert_SimpleModel_5000()
+        {
+            int dataSize = 5000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void ContextAddRangeInsert_SimpleModel_10000()
+        {
+            int dataSize = 10000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void ContextAddRangeInsert_SimpleModel_20000()
+        {
+            int dataSize = 20000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void ContextAddRangeInsert_SimpleModel_50000()
+        {
+            int dataSize = 50000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
+        [Fact]
+        public void ContextAddRangeInsert_SimpleModel_100000()
+        {
+            int dataSize = 100000;
+            IEnumerable<SimpleModel> testSimpleModels = BulkInsertTestDataGenerator.CreateSimpleModels(dataSize);
+            _output.WriteLine($"Data generated: {testSimpleModels.Count()}");
+            var sw = new Stopwatch();
+            _output.WriteLine($"Start elapsed time: {sw.ElapsedMilliseconds} ms");
+            using (var insertTestContext = new BulkInsertTestContext())
+            {
+                sw.Start();
+                insertTestContext.SimpleModels.AddRange(testSimpleModels);
+                sw.Stop();
+            }
+
+            _output.WriteLine($@"Data size: {dataSize}, elapsed time: {sw.ElapsedMilliseconds} ms");
+
+        }
+
     }
 }

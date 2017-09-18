@@ -6,7 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Ragyaiddo.Ef.BulkInsert
+namespace Ragyaiddo.Ef.BulkInsert.DataReader
 {
     public abstract class EntityDataReaderBase<TEntity> : IDataReader
     {
@@ -27,7 +27,9 @@ namespace Ragyaiddo.Ef.BulkInsert
         public string TableName { get; private set; }
 
         public int Depth => 1;
+
         public bool IsClosed => this._enumerator == null;
+
         public int RecordsAffected => -1;
 
         public int FieldCount => this._accessors.Length;
